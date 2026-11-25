@@ -1,5 +1,5 @@
 {
-  "name": "2 - Postagem aprovada (Instagram vet felina)",
+  "name": "2 - Postagem aprovada (Instagram Anna)",
   "nodes": [
     {
       "parameters": {
@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "ffcc24d3-8795-48a4-b43c-7f8648964dc1",
+      "id": "77edb371-da71-4d79-a1f4-87ef22ba736a",
       "name": "A cada 30 min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -23,46 +23,32 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
-        },
-        "sheetName": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
           "__rl": true,
           "mode": "name",
-          "value": "Conteudos"
+          "value": "conteudos"
         },
-        "filtersUI": {
-          "values": [
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
             {
-              "lookupColumn": "status",
-              "lookupValue": "aprovado"
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "aprovado"
             }
           ]
         },
-        "options": {}
+        "returnAll": false,
+        "limit": 1
       },
-      "id": "d98559ab-b4ad-4b28-93a4-391c5f3ecca9",
-      "name": "Ler aprovados",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [
-        220,
-        0
-      ]
-    },
-    {
-      "parameters": {
-        "maxItems": 1
-      },
-      "id": "b8388c8d-fe6f-42e3-bc62-266500905748",
-      "name": "Limite",
-      "type": "n8n-nodes-base.limit",
+      "id": "3c22d359-bd71-4b8c-87aa-2df28ffce730",
+      "name": "Buscar post aprovado",
+      "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1,
       "position": [
-        440,
+        220,
         0
       ]
     },
@@ -76,7 +62,7 @@
           },
           "conditions": [
             {
-              "id": "fe01daf4-7eb8-4123-b941-0444bbf3e81c",
+              "id": "b8287724-de75-467d-a7ee-2eaf9a9f5ba6",
               "leftValue": "={{ $json.image_url }}",
               "rightValue": "",
               "operator": {
@@ -90,19 +76,19 @@
         },
         "options": {}
       },
-      "id": "ca7931b0-1d45-41d8-94ff-b26d7daed78f",
+      "id": "789f0146-ebdd-457d-a886-77d09d3b5dba",
       "name": "Tem imagem?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        660,
+        440,
         0
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media",
+        "url": "=https://{{ $env.GRAPH_HOST }}/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media",
         "sendBody": true,
         "contentType": "form-urlencoded",
         "specifyBody": "keypair",
@@ -124,12 +110,12 @@
         },
         "options": {}
       },
-      "id": "581367bb-557a-46e9-ae04-654fd3a70cc0",
+      "id": "da8f78f3-4d41-430a-8713-700e3d553226",
       "name": "Criar container de midia",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
+        660,
         -80
       ]
     },
@@ -138,19 +124,19 @@
         "amount": 20,
         "unit": "seconds"
       },
-      "id": "a702884f-c6ad-4e57-93e9-73184247cdc2",
+      "id": "6bbdd0d2-fd8c-494f-ac79-8b060d195fc5",
       "name": "Aguardar processamento",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1100,
+        880,
         -80
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media_publish",
+        "url": "=https://{{ $env.GRAPH_HOST }}/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media_publish",
         "sendBody": true,
         "contentType": "form-urlencoded",
         "specifyBody": "keypair",
@@ -168,48 +154,50 @@
         },
         "options": {}
       },
-      "id": "fc84720b-b214-4398-855f-9f69bb9b8357",
+      "id": "fe4bb7e1-5231-4873-b304-a1bf7c91e46b",
       "name": "Publicar",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1320,
+        1100,
         -80
       ]
     },
     {
       "parameters": {
+        "resource": "row",
         "operation": "update",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
-        },
-        "sheetName": {
+        "dataTableId": {
           "__rl": true,
           "mode": "name",
-          "value": "Conteudos"
+          "value": "conteudos"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "codigo",
+              "condition": "eq",
+              "keyValue": "={{ $('Buscar post aprovado').item.json.codigo }}"
+            }
+          ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "id": "={{ $('Limite').item.json.id }}",
             "status": "publicado",
             "publicado_em": "={{ $now.toISO() }}"
           },
-          "matchingColumns": [
-            "id"
-          ],
+          "matchingColumns": [],
           "schema": []
-        },
-        "options": {}
+        }
       },
-      "id": "069ece6d-cc25-4a8e-907c-4fa2f48a1bba",
+      "id": "b67a34a0-c643-4a14-b86f-cf6f42d9d2da",
       "name": "Marcar como publicado",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
       "position": [
-        1540,
+        1320,
         -80
       ]
     }
@@ -219,25 +207,14 @@
       "main": [
         [
           {
-            "node": "Ler aprovados",
+            "node": "Buscar post aprovado",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ler aprovados": {
-      "main": [
-        [
-          {
-            "node": "Limite",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limite": {
+    "Buscar post aprovado": {
       "main": [
         [
           {

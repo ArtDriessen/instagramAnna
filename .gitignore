@@ -1,4 +1,6 @@
+config.env
 .env
 *.env
+!config.exemplo.env
 .DS_Store
 node_modules/

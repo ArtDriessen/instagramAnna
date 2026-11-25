@@ -1,5 +1,5 @@
 {
-  "name": "3 - Comentarios (Instagram vet felina)",
+  "name": "3 - Comentarios (Instagram Anna)",
   "nodes": [
     {
       "parameters": {
@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "8592078a-4937-4573-a406-54fe96e71aa8",
+      "id": "4fd9fdb2-3b8b-430e-983a-ad4deff61ec5",
       "name": "A cada 10 min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -24,7 +24,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://graph.facebook.com/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media",
+        "url": "=https://{{ $env.GRAPH_HOST }}/{{ $env.GRAPH_VERSION }}/{{ $env.IG_USER_ID }}/media",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -44,7 +44,7 @@
         },
         "options": {}
       },
-      "id": "0eb0818e-3e08-4053-a48b-104d613c2e4f",
+      "id": "fcca5d88-a092-4355-91b6-c7b9cff6fe1b",
       "name": "Buscar posts e comentarios",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -57,7 +57,7 @@
       "parameters": {
         "jsCode": "\nconst sd = $getWorkflowStaticData('global');\nsd.seen = sd.seen || {};\nconst minhaConta = ($env.IG_USERNAME || '').toLowerCase();\nconst novos = [];\nfor (const item of $input.all()) {\n  const medias = item.json.data || [];\n  for (const m of medias) {\n    const comentarios = (m.comments && m.comments.data) || [];\n    for (const c of comentarios) {\n      if (sd.seen[c.id]) continue;\n      sd.seen[c.id] = Date.now();\n      if (minhaConta && (c.username || '').toLowerCase() === minhaConta) continue;\n      novos.push({ json: { comment_id: c.id, username: c.username, texto: c.text, post_legenda: (m.caption || '').slice(0, 300), data: c.timestamp } });\n    }\n  }\n}\nconst limite = Date.now() - 14 * 24 * 3600 * 1000;\nfor (const k of Object.keys(sd.seen)) { if (sd.seen[k] < limite) delete sd.seen[k]; }\n// primeira execução: só registra o que já existe, para não responder comentários antigos\nif (!sd.initialized) { sd.initialized = true; return []; }\nreturn novos;\n"
       },
-      "id": "d0df3344-e92c-42ec-b2b1-98b1dac2d95c",
+      "id": "a13561f3-64e6-43b9-9e65-7d79ee21363c",
       "name": "Achar comentarios novos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -68,9 +68,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const SYSTEM = \"Voc\\u00ea escreve para o Instagram de uma cl\\u00ednica veterin\\u00e1ria especializada em felinos (gatos), no Brasil. Tom: acolhedor, claro e respons\\u00e1vel, para tutores leigos. Portugu\\u00eas do Brasil. No m\\u00e1ximo 2 emojis. Regras: nunca diagnostique nem prescreva; nunca indique medicamentos ou doses (v\\u00e1rios rem\\u00e9dios humanos s\\u00e3o perigosos para gatos); n\\u00e3o prometa cura; n\\u00e3o cite pre\\u00e7os nem promo\\u00e7\\u00f5es; n\\u00e3o critique outros profissionais. Em sinais de emerg\\u00eancia (dificuldade para respirar, tentativas de urinar sem sucesso, convuls\\u00e3o, sangramento, v\\u00f4mitos repetidos, apatia intensa, suspeita de intoxica\\u00e7\\u00e3o), oriente atendimento veterin\\u00e1rio imediato. Termine com um convite suave para agendar consulta. Sua tarefa agora \\u00e9 classificar um coment\\u00e1rio de seguidor e sugerir uma resposta curta (m\\u00e1x. 300 caracteres), cordial, sem conselho cl\\u00ednico individual. Informa\\u00e7\\u00f5es da cl\\u00ednica para usar nas respostas: PREENCHER_COM_HORARIO_ENDERECO_E_WHATSAPP_DA_CLINICA. Categorias: elogio, duvida_simples (hor\\u00e1rio, endere\\u00e7o, se atendem gatos, como agendar), duvida_clinica (sintomas, rem\\u00e9dios, comportamento do gato do seguidor), reclamacao, emergencia, spam, outro. Responda SOMENTE com JSON v\\u00e1lido: {\\\"categoria\\\": \\\"...\\\", \\\"resposta\\\": \\\"...\\\"}. Para duvida_clinica e emergencia, a resposta deve orientar consulta veterin\\u00e1ria e convidar para o WhatsApp, sem dar orienta\\u00e7\\u00e3o cl\\u00ednica.\";\n\nreturn $input.all().map(it => ({ json: {\n  ...it.json,\n  body: {\n    model: \"claude-sonnet-5-5\",\n    max_tokens: 500,\n    system: SYSTEM,\n    messages: [{ role: 'user', content: `Post: ${it.json.post_legenda}\\nComentário de @${it.json.username}: ${it.json.texto}` }]\n  }\n}}));\n"
+        "jsCode": "const SYSTEM = \"Voc\\u00ea escreve para o Instagram profissional da Anna, m\\u00e9dica-veterin\\u00e1ria que atende em DOMIC\\u00cdLIO c\\u00e3es e gatos, com \\u00eanfase em medicina felina (ela \\u00e9 p\\u00f3s-graduada em medicina felina). Escreva em portugu\\u00eas do Brasil, na primeira pessoa do singular, como se fosse a pr\\u00f3pria Anna. Tom: acolhedor, claro, pr\\u00f3ximo e respons\\u00e1vel, para tutores leigos. No m\\u00e1ximo 2 emojis. Regras: nunca diagnostique nem prescreva; nunca indique medicamentos ou doses (v\\u00e1rios rem\\u00e9dios humanos s\\u00e3o perigosos para gatos e c\\u00e3es); n\\u00e3o prometa cura; n\\u00e3o cite pre\\u00e7os, promo\\u00e7\\u00f5es nem regi\\u00e3o atendida; n\\u00e3o critique outros profissionais. O atendimento domiciliar n\\u00e3o substitui hospital: em sinais de emerg\\u00eancia (dificuldade para respirar, tentativas de urinar sem sucesso, convuls\\u00e3o, sangramento, v\\u00f4mitos repetidos, apatia intensa, suspeita de intoxica\\u00e7\\u00e3o, trauma), oriente procurar pronto atendimento veterin\\u00e1rio imediatamente. Quando fizer sentido, e sem exagero, mencione as vantagens do atendimento em casa (menos estresse, ambiente conhecido). Termine com um convite suave para agendar um atendimento pelo WhatsApp ou direct. Sua tarefa agora \\u00e9 classificar um coment\\u00e1rio de seguidor e sugerir uma resposta curta (m\\u00e1x. 300 caracteres), cordial, sem conselho cl\\u00ednico individual. Categorias: elogio, duvida_simples (como funciona o atendimento em casa, se atende c\\u00e3es e gatos, como agendar, hor\\u00e1rio, regi\\u00e3o), duvida_clinica (sintomas, rem\\u00e9dios, comportamento do pet do seguidor), reclamacao, emergencia, spam, outro. Responda SOMENTE com JSON v\\u00e1lido: {\\\"categoria\\\": \\\"...\\\", \\\"resposta\\\": \\\"...\\\"}. Para duvida_clinica e emergencia, a resposta deve orientar consulta veterin\\u00e1ria (ou pronto atendimento, se for emerg\\u00eancia) e convidar para o WhatsApp, sem dar orienta\\u00e7\\u00e3o cl\\u00ednica. Para duvida_simples, use APENAS as informa\\u00e7\\u00f5es oficiais abaixo; se a informa\\u00e7\\u00e3o pedida n\\u00e3o estiver nelas, n\\u00e3o invente: convide a pessoa a chamar no WhatsApp ou direct. Informa\\u00e7\\u00f5es oficiais: \" + ($env.INFO_ATENDIMENTO || '(nenhuma informação cadastrada: convide a pessoa a chamar no WhatsApp ou direct)');\nreturn $input.all().map(it => ({ json: {\n  ...it.json,\n  body: {\n    model: \"claude-sonnet-5-5\",\n    max_tokens: 500,\n    system: SYSTEM,\n    messages: [{ role: 'user', content: `Post: ${it.json.post_legenda}\\nComentário de @${it.json.username}: ${it.json.texto}` }]\n  }\n}}));\n"
       },
-      "id": "aec35696-ceb7-4ad2-8145-f5cf3cb5c22e",
+      "id": "2f5af1fe-0282-42e6-875c-df2de29d3ae6",
       "name": "Montar pedido",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -105,7 +105,7 @@
         "jsonBody": "={{ JSON.stringify($json.body) }}",
         "options": {}
       },
-      "id": "32ee3d71-97aa-4dfb-85bc-d170ab127292",
+      "id": "5aa23ad9-ba9e-47be-90ab-b67fa9b66208",
       "name": "Classificar e sugerir resposta (Claude)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -116,9 +116,9 @@
     },
     {
       "parameters": {
-        "jsCode": "\nconst items = $input.all();\nreturn items.map((it, i) => {\n  const ctx = $('Montar pedido').all()[i].json;\n  let d;\n  try {\n    const t = it.json.content[0].text;\n    d = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));\n  } catch (e) { d = { categoria: 'outro', resposta: '' }; }\n  const automaticas = ['elogio', 'duvida_simples'];\n  const auto = automaticas.includes(d.categoria) && !!d.resposta;\n  return { json: {\n    comment_id: ctx.comment_id, username: ctx.username, texto: ctx.texto, data: ctx.data,\n    categoria: d.categoria, resposta: d.resposta || '', auto\n  }};\n});\n"
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nitems.forEach((it, i) => {\n  const ctx = $('Montar pedido').all()[i].json;\n  let d;\n  try {\n    const t = it.json.content[0].text;\n    d = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));\n  } catch (e) { d = { categoria: 'outro', resposta: '' }; }\n  if (d.categoria === 'spam') return; // ignora spam\n  const automaticas = ['elogio', 'duvida_simples'];\n  const auto = automaticas.includes(d.categoria) && !!d.resposta;\n  out.push({ json: {\n    comment_id: ctx.comment_id, username: ctx.username, texto: ctx.texto, data: ctx.data,\n    categoria: d.categoria, resposta: d.resposta || '', auto\n  }});\n});\nreturn out;\n"
       },
-      "id": "1e2fea78-b04b-4bfd-8c7f-132c60ddc979",
+      "id": "41cdadcb-c62a-4039-808e-d0d32dcba6e7",
       "name": "Interpretar resposta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -137,7 +137,7 @@
           },
           "conditions": [
             {
-              "id": "11bfbb14-504e-41a1-912f-07b4fb5b959b",
+              "id": "19f8036d-1de3-4a9a-9f7f-75ba71ce088c",
               "leftValue": "={{ $json.auto }}",
               "rightValue": "",
               "operator": {
@@ -151,7 +151,7 @@
         },
         "options": {}
       },
-      "id": "73c6503d-47ac-407c-a9d9-683d51ea0551",
+      "id": "d6cae479-8a16-42fb-9322-4e3b6277947e",
       "name": "Resposta automatica?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -165,7 +165,7 @@
         "amount": 30,
         "unit": "seconds"
       },
-      "id": "1e3dc07d-2037-4b47-973e-69136206e553",
+      "id": "a00f9b61-5321-4345-9207-4619f3ab358f",
       "name": "Espacar respostas",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -177,7 +177,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/{{ $env.GRAPH_VERSION }}/{{ $json.comment_id }}/replies",
+        "url": "=https://{{ $env.GRAPH_HOST }}/{{ $env.GRAPH_VERSION }}/{{ $json.comment_id }}/replies",
         "sendBody": true,
         "contentType": "form-urlencoded",
         "specifyBody": "keypair",
@@ -195,7 +195,7 @@
         },
         "options": {}
       },
-      "id": "e95606b4-c0b0-48d6-8834-cba817bb43cd",
+      "id": "34409c1a-4247-4261-85ea-99b1c356262d",
       "name": "Responder comentario",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -206,16 +206,12 @@
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
-        },
-        "sheetName": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
           "__rl": true,
           "mode": "name",
-          "value": "FilaHumana"
+          "value": "fila_humana"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -230,13 +226,12 @@
           },
           "matchingColumns": [],
           "schema": []
-        },
-        "options": {}
+        }
       },
-      "id": "739c836b-cc04-43f9-9880-3f917a316a75",
-      "name": "Enviar para fila humana",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "id": "07ba06ed-5c0b-48d3-b5f7-b7c6e0c3f3c4",
+      "name": "Enviar para fila_humana",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
       "position": [
         1540,
         100
@@ -321,7 +316,7 @@
         ],
         [
           {
-            "node": "Enviar para fila humana",
+            "node": "Enviar para fila_humana",
             "type": "main",
             "index": 0
           }
