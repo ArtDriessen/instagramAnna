@@ -1,0 +1,181 @@
+{
+  "name": "1 - Geracao de conteudo (Instagram vet felina)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "41829f01-5bbc-41ff-a202-5fd9198eb78f",
+      "name": "Toda segunda 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const SYSTEM = \"Voc\\u00ea escreve para o Instagram de uma cl\\u00ednica veterin\\u00e1ria especializada em felinos (gatos), no Brasil. Tom: acolhedor, claro e respons\\u00e1vel, para tutores leigos. Portugu\\u00eas do Brasil. No m\\u00e1ximo 2 emojis. Regras: nunca diagnostique nem prescreva; nunca indique medicamentos ou doses (v\\u00e1rios rem\\u00e9dios humanos s\\u00e3o perigosos para gatos); n\\u00e3o prometa cura; n\\u00e3o cite pre\\u00e7os nem promo\\u00e7\\u00f5es; n\\u00e3o critique outros profissionais. Em sinais de emerg\\u00eancia (dificuldade para respirar, tentativas de urinar sem sucesso, convuls\\u00e3o, sangramento, v\\u00f4mitos repetidos, apatia intensa, suspeita de intoxica\\u00e7\\u00e3o), oriente atendimento veterin\\u00e1rio imediato. Termine com um convite suave para agendar consulta. Responda SOMENTE com um objeto JSON v\\u00e1lido, sem texto fora dele, com as chaves: \\\"legenda\\\" (legenda completa com 5 a 8 hashtags no final), \\\"roteiro\\\" (se formato=reels: roteiro falado de 30 a 45 segundos com cenas; se carrossel: texto de 6 a 8 slides, um por linha, come\\u00e7ando por 'Slide 1:'; se imagem: texto curto para a arte), \\\"sugestao_visual\\\" (descri\\u00e7\\u00e3o da imagem ou do v\\u00eddeo a produzir).\";\nconst temas = [\"Bolas de pelo: quando \\u00e9 normal e quando \\u00e9 sinal de alerta\", \"Meu gato bebe pouca \\u00e1gua: como estimular a hidrata\\u00e7\\u00e3o\", \"Doen\\u00e7a renal cr\\u00f4nica em gatos: sinais precoces\", \"Castra\\u00e7\\u00e3o de gatos: benef\\u00edcios e mitos\", \"Vacinas essenciais para gatos (V4/V5 e FeLV): quando fazer\", \"Estresse felino e enriquecimento ambiental dentro de casa\", \"Obstru\\u00e7\\u00e3o urin\\u00e1ria em gatos: por que \\u00e9 uma emerg\\u00eancia\", \"Cuidados com gatos idosos: o que muda depois dos 10 anos\", \"Sa\\u00fade bucal: gengivite e doen\\u00e7a periodontal em gatos\", \"Plantas t\\u00f3xicas para gatos, como o l\\u00edrio: o que evitar em casa\", \"Mitos e verdades sobre gatos\", \"Como levar o gato ao veterin\\u00e1rio sem estresse (caixa de transporte)\", \"Chegada de um filhote: primeiros cuidados e primeira consulta\", \"Obesidade felina: como perceber e por que importa\"];\n\nconst formatos = ['carrossel', 'reels', 'imagem'];\nconst sd = $getWorkflowStaticData('global');\nconst i = sd.i || 0;\nconst out = [];\nfor (let k = 0; k < 3; k++) {\n  const tema = temas[(i + k) % temas.length];\n  const formato = formatos[k % formatos.length];\n  const body = {\n    model: \"claude-sonnet-5-5\",\n    max_tokens: 1500,\n    system: SYSTEM,\n    messages: [{ role: 'user', content: `Tema: ${tema}\\nFormato: ${formato}\\nCrie o conteúdo.` }]\n  };\n  out.push({ json: { tema, formato, body } });\n}\nsd.i = (i + 3) % temas.length;\nreturn out;\n"
+      },
+      "id": "d5eb8bbc-e979-4fd9-8b81-29096279d941",
+      "name": "Escolher temas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "37473676-b993-4efb-955d-184870420de2",
+      "name": "Gerar conteudo (Claude)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nconst out = [];\nitems.forEach((it, i) => {\n  const ctx = $('Escolher temas').all()[i].json;\n  let d;\n  try {\n    const t = it.json.content[0].text;\n    d = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));\n  } catch (e) {\n    d = { legenda: '(erro ao interpretar a resposta da IA - gere novamente)', roteiro: '', sugestao_visual: '' };\n  }\n  out.push({ json: {\n    id: Date.now() + '-' + i,\n    data_criacao: new Date().toISOString(),\n    tema: ctx.tema,\n    formato: ctx.formato,\n    legenda: d.legenda || '',\n    roteiro: typeof d.roteiro === 'string' ? d.roteiro : JSON.stringify(d.roteiro || ''),\n    sugestao_visual: d.sugestao_visual || '',\n    image_url: '',\n    status: 'rascunho'\n  }});\n});\nreturn out;\n"
+      },
+      "id": "5cb6e86b-6fb5-497e-97e1-f05e502da941",
+      "name": "Organizar rascunhos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "COLE_AQUI_O_ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Conteudos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "data_criacao": "={{ $json.data_criacao }}",
+            "tema": "={{ $json.tema }}",
+            "formato": "={{ $json.formato }}",
+            "legenda": "={{ $json.legenda }}",
+            "roteiro": "={{ $json.roteiro }}",
+            "sugestao_visual": "={{ $json.sugestao_visual }}",
+            "image_url": "={{ $json.image_url }}",
+            "status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "d92ec028-8edb-429d-bbd9-536cc17be0c0",
+      "name": "Salvar na planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Toda segunda 9h": {
+      "main": [
+        [
+          {
+            "node": "Escolher temas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escolher temas": {
+      "main": [
+        [
+          {
+            "node": "Gerar conteudo (Claude)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar conteudo (Claude)": {
+      "main": [
+        [
+          {
+            "node": "Organizar rascunhos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Organizar rascunhos": {
+      "main": [
+        [
+          {
+            "node": "Salvar na planilha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
